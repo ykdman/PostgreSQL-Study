@@ -37,8 +37,8 @@
   - 필요한 데이터를 불러오는 기본적인 방식
     SELECT \* FROM TableName
     `sql
-SELECT * FROM film;
-`
+    SELECT * FROM film;
+    `
 - DISTINCT
   - 중복 제거 구문
   - `SELECT DISTINCT (열이름) FROM 테이블이름;`
@@ -88,3 +88,69 @@ SELECT * FROM film;
   LIMIT 5;
   ```
   - payment 테이블에서 payment_date를 기준으로 내림차순 정렬 후, 5개의 행 까지만 표시
+- BETWEEN
+
+  - LOW <= VALUE <= HIGH 의 범위안에 있는 데이터를 구하는 명령어
+  - 최대값과 최솟값 사의 값!
+  - 날짜형식에도 사용 가능 (ISO8601 포맷 : 2007-01-01)
+
+  ```sql
+  /* 일반적인 BETWEEN*/
+    SELECT COUNT(*) FROM payment
+    WHERE amount BETWEEN 8 AND 9;
+
+   /* date 형태의 BETWEEN*/
+   SELECT * FROM payment
+   WHERE payment_date BETWEEN '2007-02-01' AND '2007-02-15';
+  ```
+
+- IN
+
+  - IN 명령어를 통하여 OR 연산과 같이 여러 옵션의 값들에 대한 출력을 할 수 있다.
+
+  ```sql
+  SELECT color FROM table
+  WHERE color IN ('red', 'blue')
+
+  SELECT color FROM table
+  WHERE color NOT IN ('red', 'blue')
+  ```
+
+  ```sql
+  /* IN 명령어 기본 사용법*/
+  SELECT * FROM payment
+  WHERE amount IN (0.99, 1.98, 1.99)
+  ORDER BY amount; --amount 의 값이 0.99 | 1.98 | 1.99 인것들만 출력
+
+  SELECT * FROM payment
+  WHERE amount IN (0.99, 1.98, 1.99); --3321 Rows
+
+  SELECT COUNT(*) FROM payment
+  WHERE amount  NOT IN (0.99, 1.98, 1.99); --11295 Rows
+
+  SELECT * FROM customer
+  WHERE first_name IN ('John', 'Jake', 'Julie');
+  ```
+
+- LIKE , ILIKE
+
+  - 문자열 데이터를 이용한 패턴 매칭 명령어
+  - LIKE 는 대소문자를 구분, ILIKE 는 대소문자를 구분하지 않는다.
+  - ‘%James’ 와 같이 %를 이용하여 와일드카드로 사용할 수 있다.
+  - ‘%A’ = ~A
+  - ‘A%’ = A~
+  - ‘%A%’ = ~ A ~(A글자를 포함만 하면 True)
+  - ‘\_’ (언더바) 는 1 character에 대한 매칭 값만 패턴화 할수 있다.
+
+  ```sql
+  WHERE name LIKE '%A'
+
+  WHERE name LIKE 'A%'
+  ```
+
+  ```sql
+  /* LIKE */
+  /* first_name 이 J로 시작하고 last_name이 S로 시작하는 모든 항목*/
+  SELECT * FROM customer
+  WHERE first_name LIKE 'J%' AND last_name LIKE 'S%';
+  ```
