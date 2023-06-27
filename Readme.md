@@ -37,8 +37,8 @@
   - 필요한 데이터를 불러오는 기본적인 방식
     SELECT \* FROM TableName
     `sql
-    SELECT * FROM film;
-    `
+SELECT * FROM film;
+`
 - DISTINCT
   - 중복 제거 구문
   - `SELECT DISTINCT (열이름) FROM 테이블이름;`
@@ -153,4 +153,171 @@
   /* first_name 이 J로 시작하고 last_name이 S로 시작하는 모든 항목*/
   SELECT * FROM customer
   WHERE first_name LIKE 'J%' AND last_name LIKE 'S%';
+  ```
+
+### Group By
+
+- 데이터가 카테고리별로 어떻게 분포되어 있는지 파악하기 위해 데이터를 집계하고 함수를 적용하는 SQL 문이다.
+- FROM 문 이나 WHERE 문 바로뒤에 와야 사용할 수 있다.
+- Group By로 호출된 열은 SELECT 문에도 선언되어야 한다.
+  (집계함수로 호출된 다른 열이 있다면, 그 열은 group by문에 호출되지 않아도 된다.)
+
+- 집계함수
+
+  - 여러조건을 입력하여 하나의 결과를 반환 하는것
+  - SELECT 절이나, HAVING 절에서만 호출 된다.
+  - AVG, COUNT, MAX, MIN, SUM
+  - 집계함수 AVG는 평균값을 산출하기 때문에 부동소수가 올수 있다.
+    때문에 ROUND()와 같이 사용하여 평균산출값의 크기를 줄여서 출력할 수 있다.
+  - COUNT 는 행의 개수만 반환한다.
+
+  ```sql
+  /*최소 교체비용 출력*/
+  SELECT MIN(replacement_cost) FROM film;
+
+  /*최대 교체비용 출력*/
+  SELECT MAX(replacement_cost) AS max_replace_cost FROM film;
+
+  /* 하나의 열에 대해서만 집계함수를 호출할 수 있다.*/
+  -- SELECT MIN(replacement_cost), film_id FROM film; -- Error
+
+  SELECT MIN(replacement_cost), MAX(replacement_cost)
+  FROM film;
+
+  /* 평균 구하기*/
+  SELECT ROUND(AVG(replacement_cost),2) --소수 두자리수까지 반올림
+  FROM film;
+  ```
+
+- Group By 사용
+
+  1. 카테고리열을 선택한다.
+  2. 카테고리별로 테이블을 나누어 준다.
+  3. 집계함수를 이용하여 카테고리별 집계 산출 값을 출력한다.
+
+  - 간단한 GROUP BY 문 사용
+
+  ```sql
+  /*GROUP BY*/
+  SELECT customer_id, SUM(amount) FROM payment
+  GROUP BY customer_id
+  ORDER BY customer_id;
+
+  -----------------------------------------
+  SELECT customer_id, staff_id, SUM(amount)
+  FROM payment
+  GROUP BY staff_id, customer_id
+  ORDER BY customer_id, staff_id;
+  ```
+
+  - 날짜 형식 (DATE)을 이용한 GROUP BY
+  - 날짜 변환 = DATE()
+
+  ```sql
+  /*날짜(DATE 형식)를 이용한 GROUP BY*/
+  SELECT DATE(payment_date), SUM(amount) FROM payment
+  GROUP BY DATE(payment_date)
+  ORDER BY SUM(amount) DESC;
+  ```
+
+- GROUP BY 연습문제 1
+
+  ```sql
+  /*
+  가장 많은 결제를 한 직원에게 보너스를 주고싶을때 (결제 건수로 측정)
+  */
+  SELECT staff_id, COUNT(*) FROM payment
+  GROUP BY staff_id
+  ORDER BY COUNT(*);
+
+  /*
+  교체비용(replacement_cost) 과 영화의 MPAA 등급사이의 관계에대한 연구 진행중
+  MPAA 등급별 평균 교체비용 등급은 무엇일까
+  */
+
+  SELECT rating, ROUND(AVG(replacement_cost),4)
+  FROM film
+  GROUP BY rating
+  ORDER BY ROUND(AVG(replacement_cost),4) DESC;
+
+  /*
+  상위 5명의 고객에게 쿠폰을 주려고 한다. 이때 총 지출액 또는 총사용을 기준으로 상위 고객 ID는 뭘까?
+  (total spend 가 기준)
+  */
+  SELECT customer_id, SUM(amount)
+  FROM payment
+  GROUP BY customer_id
+  ORDER BY SUM(amount) DESC
+  LIMIT 5;
+  ```
+
+- HAVING 문법
+
+  - 집계가 이미 수행된 !이후! 에 자료를 필터링 하기 위해 사용한다.
+    GROUP BY 호출 뒤에 위치한다.
+
+  ```sql
+  /*HAVING 구문*/
+
+  /*
+  customer_id로 Grouping 한 값들 중 amount 합계가 130 이상인 것들만 출력
+  */
+  SELECT customer_id, SUM(amount) FROM payment
+  WHERE customer_id NOT IN (184, 87, 477)
+  GROUP BY customer_id
+  HAVING SUM(amount) >=130
+  ORDER BY SUM(amount) DESC;
+
+  /*이용 고객의 수가 300명 초과인 점포를 찾기*/
+  SELECT store_id, COUNT(customer_id) FROM customer
+  GROUP BY store_id
+  HAVING COUNT(customer_id) > 300;
+  ```
+
+- HAVING 연습문제
+
+  ```sql
+  /* HAVING 연습문제*/
+
+  /*결제 거래 건수가 40 건이상인 고객에게 플래티넘 손님 칭호를 준다.*/
+  SELECT customer_id, COUNT(*)
+  FROM payment
+  GROUP BY customer_id
+  HAVING COUNT(*) >= 40
+  ORDER BY COUNT(*) DESC;
+
+  /*직원 2와의 거래에서 100달러 이상을 사용한 customer 의 id는 무엇인가*/
+
+  SELECT customer_id, staff_id, SUM(amount)
+  FROM payment
+  WHERE staff_id = 2
+  GROUP BY customer_id, staff_id
+  HAVING SUM(amount) >= 100
+  ORDER BY SUM(amount);
+  ```
+
+- 평가문제 1
+  ```sql
+  /* Assesment Test 1*/
+
+  /*id가 2인 직원에게서 최소 110 달러를 쓴 customer 의 id를 찾기*/
+  SELECT customer_id, staff_id, SUM(amount)
+  FROM payment
+  WHERE staff_id = 2
+  GROUP BY customer_id, staff_id
+  HAVING SUM(amount) >= 110;
+  -- 187, 148
+
+  /*'J' 로 시작하는 영화는 몇 편인가?*/
+  SELECT COUNT(*) FROM film
+  WHERE title LIKE 'J%';
+  -- 20편
+
+  /*이름이 'E'로 시작하는 동시에 주소 ID 가 500 미만인 고객 중, ID 번호가 가장 높은 고객은 누구?*/
+  SELECT *
+  FROM customer
+  WHERE first_name LIKE 'E%' AND address_id < 500
+  ORDER BY customer_id DESC
+  LIMIT 1;
+  -- Eddie Tomlin
   ```
